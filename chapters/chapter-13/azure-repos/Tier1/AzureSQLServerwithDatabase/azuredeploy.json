@@ -1,0 +1,104 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "hackathonssAdminLogin": {
+      "type": "string",
+      "minLength": 1
+    },
+    "hackathonssAdminLoginPassword": {
+      "type": "securestring"
+    },
+    "Location": {
+      "type": "string"
+    },
+    "partsunlimited_dbName": {
+      "type": "string",
+      "minLength": 1
+    },
+    "partsunlimited_dbCollation": {
+      "type": "string",
+      "minLength": 1,
+      "defaultValue": "SQL_Latin1_General_CP1_CI_AS"
+    },
+    "partsunlimited_dbEdition": {
+      "type": "string",
+      "defaultValue": "Basic",
+      "allowedValues": [
+        "Basic",
+        "Standard",
+        "Premium"
+      ]
+    },
+    "partsunlimited_dbRequestedServiceObjectiveName": {
+      "type": "string",
+      "defaultValue": "Basic",
+      "allowedValues": [
+        "Basic",
+        "S0",
+        "S1",
+        "S2",
+        "P1",
+        "P2",
+        "P3"
+      ],
+      "metadata": {
+        "description": "Describes the performance level for Edition"
+      }
+    }
+  },
+  "variables": {
+    "hackathonasdName": "[concat('arghackas', uniqueString(resourceGroup().id))]",
+    "hackathonssName": "[concat('arghackss', uniqueString(resourceGroup().id))]"
+  },
+  "resources": [
+    {
+      "name": "[variables('hackathonssName')]",
+      "type": "Microsoft.Sql/servers",
+      "location": "[parameters('Location')]",
+      "apiVersion": "2014-04-01-preview",
+      "dependsOn": [],
+      "tags": {
+        "displayName": "hackathonss"
+      },
+      "properties": {
+        "administratorLogin": "[parameters('hackathonssAdminLogin')]",
+        "administratorLoginPassword": "[parameters('hackathonssAdminLoginPassword')]"
+      },
+      "resources": [
+        {
+          "name": "AllowAllWindowsAzureIps",
+          "type": "firewallrules",
+          "location": "[parameters('Location')]",
+          "apiVersion": "2014-04-01-preview",
+          "dependsOn": [
+            "[resourceId('Microsoft.Sql/servers', variables('hackathonssName'))]"
+          ],
+          "properties": {
+            "startIpAddress": "0.0.0.0",
+            "endIpAddress": "0.0.0.0"
+          }
+        },
+        {
+          "name": "[parameters('partsunlimited_dbName')]",
+          "type": "databases",
+          "location": "[parameters('Location')]",
+          "apiVersion": "2014-04-01-preview",
+          "dependsOn": [
+            "[resourceId('Microsoft.Sql/servers', variables('hackathonssName'))]"
+          ],
+          "tags": {
+            "displayName": "partsunlimited_db"
+          },
+          "properties": {
+            "collation": "[parameters('partsunlimited_dbCollation')]",
+            "edition": "[parameters('partsunlimited_dbEdition')]",
+            "maxSizeBytes": "1073741824",
+            "requestedServiceObjectiveName": "[parameters('partsunlimited_dbRequestedServiceObjectiveName')]"
+          }
+        }
+      ]
+    }
+  ],
+  "outputs": {}
+}
