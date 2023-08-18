@@ -1,0 +1,45 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "VnetName": {
+      "type": "string"
+    },
+    "SubnetName": {
+      "type": "string"
+    }
+  },
+  "variables": {
+    "HackNetPrefix": "10.0.0.0/16",
+    "HackNetSubnet1Name": "[parameters('SubnetName')]",
+    "HackNetSubnet1Prefix": "10.0.1.0/24"
+  },
+  "resources": [
+    {
+      "name": "[parameters('VnetName')]",
+      "type": "Microsoft.Network/virtualNetworks",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2016-03-30",
+      "dependsOn": [],
+      "tags": {
+        "displayName": "HackNet"
+      },
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "[variables('HackNetPrefix')]"
+          ]
+        },
+        "subnets": [
+          {
+            "name": "[variables('HackNetSubnet1Name')]",
+            "properties": {
+              "addressPrefix": "[variables('HackNetSubnet1Prefix')]"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "outputs": {}
+}

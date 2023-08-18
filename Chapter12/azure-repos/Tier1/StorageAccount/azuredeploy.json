@@ -1,0 +1,58 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "HackathonSAType": {
+      "type": "string",
+      "defaultValue": "Standard_LRS",
+      "allowedValues": [
+        "Standard_LRS",
+        "Standard_ZRS",
+        "Standard_GRS",
+        "Standard_RAGRS",
+        "Premium_LRS"
+      ]
+    },
+
+    "HackathonName": {
+      "type": "string",
+      "defaultValue": "hacktahon2019arg"
+    },
+    "ConteinerName": {
+      "type": "string",
+      "defaultValue": "aplicacion"
+    }
+
+  },
+  "variables": {
+    ////"HackathonSAName": "[concat('HackathonSA', uniqueString(resourceGroup().id))]"
+  },
+  "resources": [
+    {
+      "name": "[Parameters('HackathonName')]",
+      "type": "Microsoft.Storage/storageAccounts",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2016-01-01",
+      "sku": {
+        "name": "[parameters('HackathonSAType')]"
+      },
+      "dependsOn": [],
+      "tags": {
+        "displayName": "HackathonSA"
+      },
+      "kind": "Storage",
+      "resources": [
+        {
+          "name": "[concat('default/', parameters('ConteinerName'))]",
+          "type": "blobServices/containers",
+          "apiVersion": "2018-07-01",
+          "dependsOn": [
+            "[Parameters('HackathonName')]"
+          ]
+        }
+
+      ]
+    }
+  ],
+  "outputs": {}
+}

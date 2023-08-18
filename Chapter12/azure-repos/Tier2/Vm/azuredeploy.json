@@ -1,0 +1,278 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "type": "string"
+    },
+    "networkInterfaceName": {
+      "type": "string"
+    },
+    "networkSecurityGroupName": {
+      "type": "string"
+    },
+    "virtualNetworkId": {
+      "type": "string"
+    },
+    "subnetName": {
+      "type": "string"
+    },
+    "publicIpAddressName": {
+      "type": "string"
+    },
+    "publicIpAddressType": {
+      "type": "string"
+    },
+    "publicIpAddressSku": {
+      "type": "string"
+    },
+    "virtualMachineName": {
+      "type": "string"
+    },
+    "AutomationAccountName": {
+      "type": "string"
+    },
+    "osDiskType": {
+      "type": "string"
+    },
+    "virtualMachineSize": {
+      "type": "string"
+    },
+    "adminUsername": {
+      "type": "string"
+    },
+    "adminPassword": {
+      "type": "securestring"
+    },
+    "NodeConfigurationName": {
+      "type": "string"
+    },
+    "lbName": {
+      "type": "string"
+    },
+    "lbBackendPoolName": {
+      "type": "string"
+    },
+    "AVName": {
+      "type": "string"
+    }
+  },
+  "variables": {
+    "nsgId": "[resourceId(resourceGroup().name, 'Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroupName'))]",
+    "vnetId": "[resourceId(resourceGroup().name, 'Microsoft.Network/virtualNetworks', parameters('virtualNetworkId'))]",
+    "subnetRef": "[concat(variables('vnetId'), '/subnets/', parameters('subnetName'))]",
+    "lbID": "[resourceId('Microsoft.Network/loadBalancers',parameters('lbName'))]"
+  },
+  "resources": [
+    {
+      "name": "[concat( parameters('networkInterfaceName') , copyIndex())]",
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2018-04-01",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[concat('Microsoft.Network/networkSecurityGroups/', parameters('networkSecurityGroupName'))]",
+        "[concat('Microsoft.Network/publicIpAddresses/', parameters('publicIpAddressName') , copyIndex())]"
+      ],
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "subnet": {
+                "id": "[variables('subnetRef')]"
+              },
+              "privateIPAllocationMethod": "Dynamic",
+              "publicIpAddress": {
+                "id": "[resourceId(resourceGroup().name, 'Microsoft.Network/publicIpAddresses', concat(parameters('publicIpAddressName') , copyIndex()) )]"
+              },
+              "loadBalancerBackendAddressPools": [
+                {
+                  "id": "[concat(variables('lbID'), '/backendAddressPools/BackendPool1')]"
+                }
+              ]
+            }
+          }
+        ],
+        "networkSecurityGroup": {
+          "id": "[variables('nsgId')]"
+        }
+      },
+      "tags": {
+        "DemoIaC": "Deleteme"
+      },
+      "copy": {
+        "count": 2,
+        "name": "Demo"
+      }
+    },
+    {
+      "name": "[parameters('networkSecurityGroupName')]",
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2018-08-01",
+      "location": "[parameters('location')]",
+      "properties": {
+        "securityRules": [
+          {
+            "name": "RDP",
+            "properties": {
+              "priority": 300,
+              "protocol": "Tcp",
+              "access": "Allow",
+              "direction": "Inbound",
+              "sourceAddressPrefix": "*",
+              "sourcePortRange": "*",
+              "destinationAddressPrefix": "*",
+              "destinationPortRange": "3389"
+            }
+          },
+          {
+            "name": "HTTP",
+            "properties": {
+              "priority": 301,
+              "protocol": "Tcp",
+              "access": "Allow",
+              "direction": "Inbound",
+              "sourceAddressPrefix": "*",
+              "sourcePortRange": "*",
+              "destinationAddressPrefix": "*",
+              "destinationPortRange": "80"
+            }
+          }
+        ]
+      },
+      "tags": {
+        "DemoIaC": "Borrame"
+      }
+    },
+    {
+      "name": "[concat( parameters('publicIpAddressName') , copyIndex())]",
+      "type": "Microsoft.Network/publicIPAddresses",
+      "apiVersion": "2019-07-01",
+      "location": "[parameters('location')]",
+      "properties": {
+        "publicIpAllocationMethod": "[parameters('publicIpAddressType')]",
+        "publicIPAllocationMethod": "Dynamic"
+      },
+      "sku": {
+        "name": "[parameters('publicIpAddressSku')]"
+      },
+      "tags": {
+        "DemoIaC": "Borrame"
+      },
+      "copy": {
+        "count": 2,
+        "name": "Ippublic"
+      }
+    },
+    {
+      "name": "[concat( parameters('virtualMachineName'),copyIndex())]",
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2018-06-01",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[concat('Microsoft.Network/networkInterfaces/', parameters('networkInterfaceName'), copyIndex())]",
+        "[concat('Microsoft.Compute/availabilitySets/', parameters('AVName'))]"
+      ],
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "[parameters('virtualMachineSize')]"
+        },
+        "availabilitySet": {
+          "id": "[resourceId('Microsoft.Compute/availabilitySets', parameters('AVName'))]"
+        },
+        "licenseType": "Windows_Server",
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', concat( parameters('networkInterfaceName'), copyIndex()) )]"
+            }
+          ]
+        },
+        "osProfile": {
+          "computerName": "[concat( parameters('virtualMachineName'),copyIndex())]",
+          "adminUsername": "[parameters('adminUsername')]",
+          "adminPassword": "[parameters('adminPassword')]",
+          "windowsConfiguration": {
+            "enableAutomaticUpdates": true,
+            "provisionVmAgent": true
+          }
+        },
+        "storageProfile": {
+          "osDisk": {
+            "createOption": "FromImage",
+            "name": "[concat( concat( parameters('virtualMachineName') , copyIndex() ) ,'-OSDisk')]"
+          },
+          "imageReference": {
+            "publisher": "MicrosoftWindowsServer",
+            "offer": "WindowsServer",
+            "sku": "2016-Datacenter",
+            "version": "latest"
+          }
+        }
+      },
+      "tags": {
+        "DemoIaC": "DeleteMe"
+      },
+      "copy": {
+        "count": 2,
+        "name": "VmHack"
+      },
+      "resources": [
+        {
+          //"apiVersion": "2018-10-01",
+          "apiVersion": "2018-06-01",
+          "dependsOn": [
+            "[resourceId('Microsoft.Compute/virtualMachines', concat( parameters('virtualMachineName'),copyIndex()))]"
+          ],
+          "location": "[parameters('location')]",
+          //"name": "Microsoft.Powershell.DSC",
+          "name": "Microsoft.Powershell",
+          "properties": {
+            "publisher": "Microsoft.Powershell",
+            "type": "DSC",
+            "typeHandlerVersion": "2.77",
+            "autoUpgradeMinorVersion": true,
+            "Settings": {
+              "configurationArguments": {
+                "RegistrationUrl": "[reference(resourceId('Microsoft.Automation/automationAccounts/', parameters('AutomationAccountName')), '2015-10-31').RegistrationUrl]",
+                "NodeConfigurationName": "[parameters('NodeConfigurationName')]"
+              }
+            },
+            "protectedSettings": {
+              "configurationArguments": {
+                "RegistrationKey": {
+                  "userName": "NOT_USED",
+                  "Password": "[listKeys(resourceId('Microsoft.Automation/automationAccounts/', parameters('AutomationAccountName')), '2015-10-31').keys[0].value]"
+                }
+              }
+            }
+          },
+          "tags": {
+            "displayName": "[concat( parameters('virtualMachineName'),copyIndex())]"
+          },
+          "type": "extensions"
+        }
+      ]
+    },
+    {
+      "type": "Microsoft.Compute/availabilitySets",
+      "name": "[parameters('AVName')]",
+      //"sku": {
+      //  "name": "Aligned"
+      //},
+      "apiVersion": "2016-04-30-preview",
+      "location": "[parameters('location')]",
+      "properties": {
+        "platformFaultDomainCount": 3,
+        "platformUpdateDomainCount": 20,
+        "managed": true
+      }
+    }
+  ],
+  "outputs": {
+    "adminUsername": {
+      "type": "string",
+      "value": "[parameters('adminUsername')]"
+    }
+  }
+}

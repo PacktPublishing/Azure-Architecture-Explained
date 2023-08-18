@@ -1,0 +1,15 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "virtualNetworks_SupplyServicesVnet_name": {
+            "value": "SupplyServicesVnet"
+        },
+        "virtualNetworks_ProductDevVnet_name": {
+            "value": "ProductDevVnet"
+        },
+        "virtualNetworks_ManufacturingVnet_name": {
+            "value": "ManufacturingVnet"
+        }
+    }
+}

@@ -1,0 +1,28 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "AAName": {
+      "defaultValue": "Automation01",
+      "type": "string"
+    }
+  },
+  "variables": {
+  },
+
+  "resources": [
+    {
+      "apiVersion": "2015-10-31",
+      "name": "[parameters('AAName')]",
+      "location": "[resourceGroup().Location]",
+      "properties": {
+        "sku": {
+          "name": "Basic"
+        }
+      },
+      "tags": {},
+      "type": "Microsoft.Automation/automationAccounts"
+    }
+  ],
+  "outputs": {}
+}
